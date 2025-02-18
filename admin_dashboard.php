@@ -13,8 +13,11 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title padding=center>Admin Dashboard</title>
     <style>
+        .container div {
+            text-align: center;
+        }
         body {
             font-family: Arial, sans-serif;
             padding: 20px;
@@ -61,7 +64,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
         <h2>Admin Dashboard</h2>
         <div>
             <a href="create_user.php" class="button">Create User</a>
-            <a href="#" class="button blue" onclick="loadRequests()">Show Requests</a>
+            <a href="show_requests.php" class="button blue" onclick="loadRequests()">Show Requests</a>
         </div>
         
         <div id="requestsTable"></div>
