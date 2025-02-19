@@ -61,7 +61,7 @@ $user = $stmt->fetch();
 <body>
     <div class="container">
         <h2>Request Form</h2>
-        <form action="submit_request.php" method="POST">
+        <form id="requestForm" action="submit_request.php" method="POST">
             <div class="form-group">
                 <label>Name:</label>
                 <input type="text" value="<?php echo htmlspecialchars($user['name']); ?>" readonly class="readonly">
@@ -109,6 +109,8 @@ $user = $stmt->fetch();
             </div>
             <button type="submit">Submit Request</button>
         </form>
+        <div></div>
+        <div id="responseMessage"></div>    
     </div>
 
     <script>
@@ -119,6 +121,32 @@ $user = $stmt->fetch();
             } else {
                 leaveTypeGroup.style.display = 'none';
             }
+        });
+
+        document.getElementById('requestForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+
+            fetch('submit_request.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const responseMessage = document.getElementById('responseMessage');
+                if (data.success) {
+                    responseMessage.textContent = data.message;
+                    responseMessage.style.color = 'green';
+                } else {
+                    responseMessage.textContent = data.message;
+                    responseMessage.style.color = 'red';
+                }
+            })
+            .catch(error => {
+                const responseMessage = document.getElementById('responseMessage');
+                responseMessage.textContent = 'An error occurred while submitting the request.';
+                responseMessage.style.color = 'red';
+            });
         });
     </script>
 </body>
