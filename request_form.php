@@ -123,6 +123,7 @@ $user = $stmt->fetch();
             }
         });
 
+        
         document.getElementById('requestForm').addEventListener('submit', function(event) {
             event.preventDefault();
             const formData = new FormData(this);
