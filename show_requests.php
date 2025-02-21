@@ -53,11 +53,15 @@ if (isset($_POST['update_status'])) {
     <title>Request Management - Pravasis Request System</title>
     <style>
         body {
+            h1{
+            text-align:center;
+        }
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
         }
+       
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -140,7 +144,7 @@ if (isset($_POST['update_status'])) {
             margin-bottom: 20px;
             position: absolute;
             top: 20px;
-            right: 20px;
+            right: 170px;
         }
         .back-button:hover {
             background-color:rgb(69, 153, 0);
@@ -157,6 +161,7 @@ if (isset($_POST['update_status'])) {
     </style>
 </head>
 <body>
+    <h1>Requests Section</h1>
     <div class="container">
         <a href="admin_dashboard.php" class="back-button">← Back to Dashboard</a>
 
