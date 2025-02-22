@@ -71,7 +71,7 @@ if (count($requests) === 0) {
                 </td>
             <?php endif; ?>
             <td><?php echo htmlspecialchars($request['reason']); ?></td>
-            <td>
+            <td style="max-width: 200px; text-align:center;">
                 <?php if ($type === 'pending'): ?>
                     <button onclick="handleAction(<?php echo $request['id']; ?>, 'approved')" class="btn btn-approve">Approve</button>
                     <button onclick="handleAction(<?php echo $request['id']; ?>, 'rejected')" class="btn btn-reject">Reject</button>

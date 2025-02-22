@@ -1,50 +1,3 @@
-<?php
-session_start();
-require_once 'config.php';
-
-// Check if user is logged in as admin
-if (!isset($_SESSION['user_id']) || $_SESSION['user_type'] !== 'admin') {
-    header('Location: index.html');
-    exit();
-}
-
-// Function to get requests by status
-function getRequests($pdo, $status = null) {
-    $sql = "SELECT r.*, u.name, u.designation, u.email 
-            FROM requests r 
-            JOIN users u ON r.user_id = u.id";
-    
-    if ($status === 'pending') {
-        $sql .= " WHERE r.status = 'unread'";
-    } elseif ($status === 'approved') {
-        $sql .= " WHERE r.status = 'approved'";
-    } elseif ($status === 'rejected') {
-        $sql .= " WHERE r.status = 'rejected'";
-    }
-    
-    $sql .= " ORDER BY r.created_at DESC";
-    
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute();
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
-// Handle request deletion
-if (isset($_POST['delete_request'])) {
-    $requestId = $_POST['request_id'];
-    $stmt = $pdo->prepare("DELETE FROM requests WHERE id = ?");
-    $stmt->execute([$requestId]);
-}
-
-// Handle status updates
-if (isset($_POST['update_status'])) {
-    $requestId = $_POST['request_id'];
-    $newStatus = $_POST['new_status'];
-    $stmt = $pdo->prepare("UPDATE requests SET status = ? WHERE id = ?");
-    $stmt->execute([$newStatus, $requestId]);
-}
-?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -53,15 +6,11 @@ if (isset($_POST['update_status'])) {
     <title>Request Management - Pravasis Request System</title>
     <style>
         body {
-            h1{
-            text-align:center;
-        }
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             margin: 0;
             padding: 20px;
         }
-       
         .container {
             max-width: 1200px;
             margin: 0 auto;
@@ -80,6 +29,8 @@ if (isset($_POST['update_status'])) {
         .btn-container {
             margin-bottom: 20px;
             display: flex;
+            justify-content: space-between; /* Align items to the start and end */
+            align-items: center; /* Center items vertically */
             gap: 10px;
             flex-wrap: wrap;
         }
@@ -121,11 +72,10 @@ if (isset($_POST['update_status'])) {
             min-width: 150px;
             min-height: 20px;
             padding: 10px 20px;
-            background-color:rgb(236, 106, 0);
+            background-color:#fd7e14;
         }
         .btn:hover {
-            background-color:rgb(131, 72, 4);   
-            
+            background-color:#f06200;  
         }
         .btn-approve { background-color: #4CAF50; }
         .btn-reject { background-color: #f44336; }
@@ -134,20 +84,15 @@ if (isset($_POST['update_status'])) {
         .btn-reject:hover { background-color:rgb(236, 38, 12); }
         .btn-delete:hover { background-color:rgb(213, 247, 62); }
         .back-button {
-            background:rgb(243, 33, 33);
+            background: #dc3545;
             color: white;
-            padding: 10px 15px;
+            padding: 10px 20px;
             border: none;
             border-radius: 4px;
-            text-decoration: none;
-            display: inline-block;
-            margin-bottom: 20px;
-            position: absolute;
-            top: 20px;
-            right: 170px;
+            font-size: 16px;
         }
         .back-button:hover {
-            background-color:rgb(69, 153, 0);
+            background-color:#c82333;
         }
         .status-badge {
             padding: 4px 8px;
@@ -158,22 +103,25 @@ if (isset($_POST['update_status'])) {
         .status-pending { background-color: #ff9800; }
         .status-approved { background-color: #4CAF50; }
         .status-rejected { background-color: #f44336; }
+        .action-column {
+            width: 50px;
+        }
     </style>
 </head>
 <body>
-    <h1>Requests Section</h1>
-    <div class="container">
-        <a href="admin_dashboard.php" class="back-button">← Back to Dashboard</a>
-
+    <div class="container">        
         <div class="btn-container">
-            <button id="pending_btn" class="tab-btn" onclick="showSection('pending')">Pending Requests</button>
-            <button id="rejected_btn" class="tab-btn" onclick="showSection('rejected')">Rejected Requests</button>
-            <button id="approved_btn" class="tab-btn" onclick="showSection('approved')">Approved Requests</button>
-            <button id="all_btn" class="tab-btn" onclick="showSection('all')">All Requests</button> 
-        </div>    
+            <div>
+                <button id="pending_btn" class="tab-btn" onclick="showSection('pending')">Pending Requests</button>
+                <button id="rejected_btn" class="tab-btn" onclick="showSection('rejected')">Rejected Requests</button>
+                <button id="approved_btn" class="tab-btn" onclick="showSection('approved')">Approved Requests</button>
+                <button id="all_btn" class="tab-btn" onclick="showSection('all')">All Requests</button>
+            </div>
+            <a href="admin_dashboard.php"><button id="back" class="back-button" onclick="showSection('back')">← Back to Dashboard</button></a>
+        </div>   
         <div class="filter-search-container">
             <input type="text" id="searchInput" placeholder="Search requests..." onkeyup="searchRequests()">
-            <button class="btn" onclick="exportToCSV()">Export to CSV</button>
+            <button class="btn" onclick="ExportToExcel()">Export to Excel</button>
         </div>
 
         <script>
@@ -192,24 +140,27 @@ if (isset($_POST['update_status'])) {
             });
             
         }
-
-        function exportToCSV() {
+        function ExportToExcel() {
             const activeSection = document.querySelector('.section.active');
-            const rows = activeSection.querySelectorAll('table tr');
-            let csvContent = '';
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('th, td');
-                const rowContent = Array.from(cells).map(cell => cell.textContent).join(',');
-                csvContent += rowContent + '\n';
-            });
+            if (!activeSection) return;
 
-            const blob = new Blob([csvContent], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'requests.csv';
-            a.click();
-            URL.revokeObjectURL(url);
+            const sectionType = activeSection.id.replace('Section', '');
+            
+            // Fetch data from server for Excel export
+            fetch(`get_excel.php?type=${sectionType}`)
+                .then(response => response.blob())
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    const date = new Date().toISOString().slice(0, 10);
+                    a.href = url;
+                    a.download = `${activeSection.querySelector('h2').textContent.trim()}_${date}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => console.error('Error exporting data:', error));
         }
         </script>
         <div id="pendingSection" class="section">
